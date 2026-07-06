@@ -284,8 +284,11 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
     function pick(o){inp.value=cur[+o.getAttribute('data-i')];close();showSel();}
     inp.addEventListener('focus',open);
     inp.addEventListener('input',function(){render(inp.value);dd.classList.add('open');showSel();});
-    dd.addEventListener('mousedown',function(e){var o=e.target.closest('.opt');if(o){e.preventDefault();pick(o);}});
-    dd.addEventListener('touchend',function(e){var o=e.target.closest('.opt');if(o){e.preventDefault();pick(o);}},{passive:false});
+    var tY=0,tX=0,tMoved=false,lastT=0;
+    dd.addEventListener('touchstart',function(e){var t=e.touches[0];tY=t.clientY;tX=t.clientX;tMoved=false;lastT=Date.now();},{passive:true});
+    dd.addEventListener('touchmove',function(e){var t=e.touches[0];if(Math.abs(t.clientY-tY)>8||Math.abs(t.clientX-tX)>8)tMoved=true;},{passive:true});
+    dd.addEventListener('touchend',function(e){lastT=Date.now();var o=e.target.closest('.opt');if(o&&!tMoved)pick(o);});
+    dd.addEventListener('mousedown',function(e){if(Date.now()-lastT<700)return;var o=e.target.closest('.opt');if(o){e.preventDefault();pick(o);}});
     document.addEventListener('click',function(e){if(!e.target.closest('.mat-wrap'))close();});
     inp.addEventListener('keydown',function(e){
       if(!dd.classList.contains('open'))return;
