@@ -280,9 +280,10 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
     var out=optimize(BW,BH,pieces,rotate),boards=out.boards,placed=0,area=0,ml=0;
     boards.forEach(function(b){b.shelves.forEach(function(s){s.items.forEach(function(it){placed++;area+=it.w*it.h;});});});
     pieces.forEach(function(p){ml+=edgeML(p.w,p.h,p.cant)*p.qty;});
+    var cut=0;boards.forEach(function(b){cut+=b.shelves.length*BW;b.shelves.forEach(function(s){cut+=s.items.length*s.h;});});cut=cut/1000;
     var util=boards.length?Math.round(100*area/(boards.length*BW*BH)):0;
     var sobra=Math.max(0,(boards.length*BW*BH-area))/1e6;
-    var html='<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-bottom:1.2rem;">'+metric('Tableros',boards.length)+metric('Aprovech.',util+'%')+metric('Sobrante',sobra.toFixed(2)+' m²')+metric('Canteado',(ml/1000).toFixed(1)+' m')+'</div>';
+    var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:11px;margin-bottom:1.2rem;">'+metric('Tableros',boards.length)+metric('Aprovech.',util+'%')+metric('Corte',cut.toFixed(1)+' m')+metric('Canteado',(ml/1000).toFixed(1)+' m')+metric('Sobrante',sobra.toFixed(2)+' m²')+'</div>';
     html+='<p class="preview-head"><i class="ti ti-eye"></i> Así quedaría tu corte</p><p class="preview-sub">En color, tus piezas; el área punteada es el <b>material que te sobra</b>.</p>';
     boards.forEach(function(b,i){html+='<div class="boardcard"><p style="font-size:13px;font-weight:600;margin:0 0 8px;color:#5E4528;">Tablero '+(i+1)+' — '+BW+'×'+BH+' mm</p>'+renderBoard(b,BW,BH)+'</div>';});
     html+='<div style="display:flex;flex-direction:column;gap:5px;margin:2px 0 1.2rem;">';
@@ -298,7 +299,10 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
       L.push('Optimización de corte:');
       L.push('• Material: '+mat);L.push('• Tablero: '+BW+'x'+BH+' mm');L.push('• Respetar veta: '+(rotate?'No':'Sí'));L.push('• Piezas:');
       pieces.forEach(function(p){L.push('   - '+p.qty+'x '+p.w+'x'+p.h+' mm ('+(p.cant>0?('canteado '+p.cant+' lados'):'sin canteado')+')');});
-      L.push('• Resultado: '+boards.length+' tablero(s), '+util+'% aprovechamiento, '+sobra.toFixed(2)+' m² sobrante, '+(ml/1000).toFixed(1)+' m de canteado');
+      L.push('• Resultado (estimado): '+boards.length+' tablero(s), '+util+'% aprovechamiento, sobrante '+sobra.toFixed(2)+' m²');
+      L.push('• Espesor: '+(esp||'(no indicado)')+' mm');
+      L.push('• Metros de corte (est.): '+cut.toFixed(2)+' m');
+      L.push('• Metros de canteado: '+(ml/1000).toFixed(2)+' m');
       var msg=L.join('\n'),url='https://wa.me/'+PHONE+'?text='+encodeURIComponent(msg);
       window.open(url,'_blank');
       document.getElementById('actions').outerHTML='<div style="background:#e9f6ed;border:1px solid #bfe3c9;border-radius:11px;padding:1rem;margin-top:.5rem;"><div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;"><i class="ti ti-brand-whatsapp" style="font-size:22px;color:#1FA855;"></i><p style="margin:0;font-weight:600;font-size:14px;color:#157a3e;">Abriendo WhatsApp hacia Lucy…</p></div><pre style="margin:0;white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;color:#5b6b5e;background:#fff;border:1px solid #d6e6da;border-radius:8px;padding:10px;">'+msg.replace(/</g,'&lt;')+'</pre></div>';
