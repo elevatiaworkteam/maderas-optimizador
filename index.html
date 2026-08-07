@@ -314,6 +314,23 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
     var lo=BH-(b.bottom||0);
     if(lo>15){var ly=(b.bottom||0)*scale,lh=lo*scale;s+='<rect x="2" y="'+(ly+1)+'" width="'+(W-4)+'" height="'+(lh-3)+'" rx="3" fill="#8a7a55" fill-opacity="0.16" stroke="#a98f5f" stroke-width="1.2" stroke-dasharray="7 4"/>';if(lh>20)s+='<text x="'+(W/2)+'" y="'+(ly+lh/2+4)+'" text-anchor="middle" font-size="11" fill="#7a6a45" font-family="Inter,sans-serif">Sobrante '+BW+' × '+Math.round(lo)+' mm</text>';}
     s+='</svg>';return s;}
+  function corteSVG(boards,BW,BH,pieces,util){
+    var pad=22,titleH=22,gap=16,headH=54;
+    var scale=Math.min(620/BW,340/BH),bw=BW*scale,bh=BH*scale;
+    var W=Math.round(Math.max(bw,420)+pad*2),H=headH+pad;
+    boards.forEach(function(){H+=titleH+bh+gap;});
+    H=Math.round(H+24+pieces.length*20+pad);
+    function esc(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    var s='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" font-family="Arial,Helvetica,sans-serif">';
+    s+='<rect width="'+W+'" height="'+H+'" fill="#ffffff"/>';
+    s+='<text x="'+pad+'" y="26" font-size="17" font-weight="700" fill="#5E4528">Distribucion de cortes</text>';
+    s+='<text x="'+pad+'" y="45" font-size="11" fill="#8a7a60">Tablero '+BW+' x '+BH+' mm  ·  '+boards.length+' tablero(s)  ·  '+util+'% aprovechamiento</text>';
+    var cy=headH+pad;
+    boards.forEach(function(b,i){s+='<text x="'+pad+'" y="'+(cy+14)+'" font-size="12" font-weight="700" fill="#5E4528">Tablero '+(i+1)+'</text>';s+='<g transform="translate('+pad+','+(cy+titleH)+')">'+renderBoard(b,BW,BH)+'</g>';cy+=titleH+bh+gap;});
+    s+='<text x="'+pad+'" y="'+(cy+2)+'" font-size="12" font-weight="700" fill="#5E4528">Piezas</text>';cy+=20;
+    pieces.forEach(function(p,i){s+='<rect x="'+pad+'" y="'+(cy-9)+'" width="12" height="12" rx="2" fill="'+COLORS[i%COLORS.length]+'"/>';s+='<text x="'+(pad+20)+'" y="'+cy+'" font-size="12" fill="#5b4a34">'+p.w+' x '+p.h+' mm · '+p.qty+' uds · '+esc(cantTxt(p))+'</text>';cy+=20;});
+    s+='</svg>';return s;}
+  function subirCorte(ref,boards,BW,BH,pieces,util){try{var svg=corteSVG(boards,BW,BH,pieces,util);var im=new Image();im.onload=function(){try{var sc=2,cv=document.createElement('canvas');cv.width=im.naturalWidth*sc;cv.height=im.naturalHeight*sc;var cx=cv.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);cx.drawImage(im,0,0,cv.width,cv.height);var data=cv.toDataURL('image/png');fetch('https://n8n-xkkkgo88osskc8o0wskgwcog.72.61.70.23.sslip.io/webhook/guardar-corte',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ref:ref,img:data})}).catch(function(){});}catch(e){}};im.onerror=function(){};im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);}catch(e){}}
   function metric(l,v){return '<div style="background:#faf4ea;border:1px solid #E6D8C2;border-radius:11px;padding:.8rem 1rem;"><div style="font-size:12px;color:#8a7a60;">'+l+'</div><div style="font-size:24px;font-weight:700;color:#5E4528;">'+v+'</div></div>';}
 
   document.getElementById('run').onclick=function(){
@@ -343,7 +360,7 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
     res.innerHTML=html;
     document.getElementById('back').onclick=function(){res.innerHTML='';document.getElementById('tool').scrollIntoView({behavior:'smooth'});};
     document.getElementById('quote').onclick=function(){
-      var esp=document.getElementById('esp').value,mat=((document.getElementById('mat').value||'').trim()+(esp?(' '+esp+' mm'):'')).trim()||'(sin especificar)',L=['*Solicitud de cotización — Maderas Ibéricas*',''];
+      var esp=document.getElementById('esp').value,mat=((document.getElementById('mat').value||'').trim()+(esp?(' '+esp+' mm'):'')).trim()||'(sin especificar)',L=['*Solicitud de cotización — Maderas Ibéricas*',''];var refCorte='C'+Math.random().toString(36).slice(2,7).toUpperCase();
       L.push('Cliente: '+nom);L.push('RNC/Cédula: '+rncc);L.push('Teléfono: '+tel);L.push('');
       L.push('Optimización de corte:');
       L.push('• Material: '+mat);L.push('• Tablero: '+BW+'x'+BH+' mm');L.push('• Respetar veta: '+(rotate?'No':'Sí'));L.push('• Piezas:');
@@ -352,9 +369,9 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
       L.push('• Espesor: '+(esp||'(no indicado)')+' mm');
       L.push('• Cortes de tablero (est.): '+cortes);
       L.push('• Metros (est.): '+cut.toFixed(2)+' m');
-      L.push('• Metros de canteado: '+(ml/1000).toFixed(2)+' m');
+      L.push('• Metros de canteado: '+(ml/1000).toFixed(2)+' m');L.push('• Ref corte: '+refCorte);
       var msg=L.join('\n'),url='https://wa.me/'+PHONE+'?text='+encodeURIComponent(msg);
-      window.open(url,'_blank');
+      window.open(url,'_blank');subirCorte(refCorte,boards,BW,BH,pieces,util);
       document.getElementById('actions').outerHTML='<div style="background:#e9f6ed;border:1px solid #bfe3c9;border-radius:11px;padding:1rem;margin-top:.5rem;"><div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;"><i class="ti ti-brand-whatsapp" style="font-size:22px;color:#1FA855;"></i><p style="margin:0;font-weight:600;font-size:14px;color:#157a3e;">Abriendo WhatsApp hacia Lucy…</p></div><pre style="margin:0;white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;color:#5b6b5e;background:#fff;border:1px solid #d6e6da;border-radius:8px;padding:10px;">'+msg.replace(/</g,'&lt;')+'</pre></div>';
     };
   };
