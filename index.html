@@ -219,8 +219,8 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
           <div style="flex:1;min-width:150px;"><label class="fld">2. Tablero (mm)</label><div style="display:flex;align-items:center;gap:6px;"><input id="bw" type="number" min="1" value="2850" style="width:100%;"><span style="color:#b3a489;">×</span><input id="bh" type="number" min="1" value="2100" style="width:100%;"></div></div>
           <div style="flex:1;min-width:150px;"><label class="fld">4. ¿Respetar veta?</label><select id="veta" style="width:100%;"><option value="si">Sí — no rotar piezas</option><option value="no">No — se pueden rotar</option></select></div>
         </div>
-        <label class="fld">3 + 5. Piezas, cantidades, medidas y canteado</label>
-        <table><thead><tr><th style="width:56px;">Cant.</th><th>Largo (mm)</th><th>Ancho (mm)</th><th>Canteado</th><th style="width:28px;"></th></tr></thead><tbody id="rows"></tbody></table>
+        <label class="fld">3 + 5. Piezas: cantidades, medidas, detalle, canteado, espesor de canto y perforaci&oacute;n</label>
+        <table><thead><tr><th style="width:52px;">Cant.</th><th>Largo (mm)</th><th>Ancho (mm)</th><th>Detalle</th><th>Canteado</th><th title="Espesor de canto">Canto</th><th>Perforaci&oacute;n</th><th style="width:28px;"></th></tr></thead><tbody id="rows"></tbody></table>
         <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0;">📏 Todas las medidas en <b>milímetros (mm)</b>.</p>
         <button class="btn-soft" id="addRow" style="margin-top:12px;"><i class="ti ti-plus"></i> Agregar pieza</button>
       </div>
@@ -258,8 +258,8 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
   var rows=document.getElementById('rows');
   function cantSel(v){var o=[['0-0','Sin canteado'],['1-0','1 largo'],['2-0','2 largos'],['0-1','1 ancho'],['0-2','2 anchos'],['1-1','1 largo + 1 ancho'],['2-1','2 largos + 1 ancho'],['1-2','1 largo + 2 anchos'],['2-2','4 lados (todos)']],h='';for(var i=0;i<o.length;i++)h+='<option value="'+o[i][0]+'"'+(o[i][0]==v?' selected':'')+'>'+o[i][1]+'</option>';return h;}
   function cantTxt(p){var cl=p.cL||0,ca=p.cA||0;if(!cl&&!ca)return 'sin canteado';var t=[];if(cl)t.push(cl+' largo'+(cl>1?'s':''));if(ca)t.push(ca+' ancho'+(ca>1?'s':''));return 'canteado: '+t.join(' + ');}
-  function addRow(q,l,a,c){q=q||'';l=l||'';a=a||'';c=(c==null?'0-0':String(c));var tr=document.createElement('tr');
-    tr.innerHTML='<td style="padding:3px;"><input type="number" min="1" value="'+q+'" class="pq" style="width:100%;"></td><td style="padding:3px;"><input type="number" min="1" value="'+l+'" class="pl" style="width:100%;"></td><td style="padding:3px;"><input type="number" min="1" value="'+a+'" class="pa" style="width:100%;"></td><td style="padding:3px;"><select class="pc" style="width:100%;">'+cantSel(c)+'</select></td><td style="padding:3px;text-align:center;"><button class="del" aria-label="Quitar" style="border:none;background:none;color:#b3a489;cursor:pointer;font-size:16px;"><i class="ti ti-x"></i></button></td>';
+  function addRow(q,l,a,c,d,e,f){q=q||'';l=l||'';a=a||'';c=(c==null?'0-0':String(c));d=d||'';e=e||'C';f=f||'';var tr=document.createElement('tr');
+    tr.innerHTML='<td style="padding:3px;"><input type="number" min="1" value="'+q+'" class="pq" style="width:100%;"></td><td style="padding:3px;"><input type="number" min="1" value="'+l+'" class="pl" style="width:100%;"></td><td style="padding:3px;"><input type="number" min="1" value="'+a+'" class="pa" style="width:100%;"></td><td style="padding:3px;"><input type="text" value="'+d+'" class="pd" placeholder="Ej: Lateral" style="width:100%;min-width:84px;"></td><td style="padding:3px;"><select class="pc" style="width:100%;">'+cantSel(c)+'</select></td><td style="padding:3px;"><select class="pe" style="width:100%;"><option value="A"'+(e==='A'?' selected':'')+'>A 0.40</option><option value="B"'+(e==='B'?' selected':'')+'>B 0.80</option><option value="C"'+(e==='C'?' selected':'')+'>C 1.00</option><option value="D"'+(e==='D'?' selected':'')+'>D Otro</option></select></td><td style="padding:3px;"><select class="pf" style="width:100%;"><option value="">&mdash;</option><option value="Ranura"'+(f==='Ranura'?' selected':'')+'>Ranura</option><option value="Hueco bisagra"'+(f==='Hueco bisagra'?' selected':'')+'>Hueco bisagra</option><option value="Ranura + HB"'+(f==='Ranura + HB'?' selected':'')+'>Ranura + HB</option></select></td><td style="padding:3px;text-align:center;"><button class="del" aria-label="Quitar" style="border:none;background:none;color:#b3a489;cursor:pointer;font-size:16px;"><i class="ti ti-x"></i></button></td>';
     rows.appendChild(tr);}
   [[2,350,720,'2-2'],[4,500,800,'0-0']].forEach(function(d){addRow(d[0],d[1],d[2],d[3]);});
   document.getElementById('addRow').onclick=function(){addRow();};
@@ -359,7 +359,7 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
     var res0=document.getElementById('results');
     if(!nom||!rncc||!tel){res0.innerHTML='<div class="err-box"><b>Faltan tus datos.</b> Antes de optimizar, completa arriba tu <b>nombre</b>, <b>RNC/Cédula</b> y <b>teléfono</b>.</div>';return;}
     var BW=+document.getElementById('bw').value,BH=+document.getElementById('bh').value,rotate=document.getElementById('veta').value==='no',pieces=[];
-    rows.querySelectorAll('tr').forEach(function(tr){var q=+tr.querySelector('.pq').value,l=+tr.querySelector('.pl').value,a=+tr.querySelector('.pa').value,c=(tr.querySelector('.pc').value||'0-0').split('-');if(q>0&&l>0&&a>0)pieces.push({qty:q,w:l,h:a,cL:(+c[0]||0),cA:(+c[1]||0)});});
+    rows.querySelectorAll('tr').forEach(function(tr){var q=+tr.querySelector('.pq').value,l=+tr.querySelector('.pl').value,a=+tr.querySelector('.pa').value,c=(tr.querySelector('.pc').value||'0-0').split('-'),dd=(tr.querySelector('.pd')?tr.querySelector('.pd').value:'').trim(),ee=tr.querySelector('.pe')?tr.querySelector('.pe').value:'C',ff=tr.querySelector('.pf')?tr.querySelector('.pf').value:'';if(q>0&&l>0&&a>0)pieces.push({qty:q,w:l,h:a,cL:(+c[0]||0),cA:(+c[1]||0),det:dd,esp:ee,perf:ff});});
     var res=document.getElementById('results');
     if(!pieces.length||!(BW>0)||!(BH>0)){res.innerHTML='<div class="err-box"><b>Faltan datos del corte.</b> Completa la medida del tablero y al menos una pieza.</div>';return;}
     var bad=pieces.filter(function(p){var fN=(p.w<=BW&&p.h<=BH),fR=rotate&&(p.h<=BW&&p.w<=BH);return !(fN||fR);});
@@ -385,7 +385,7 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
       L.push('Cliente: '+nom);L.push('RNC/Cédula: '+rncc);L.push('Teléfono: '+tel);L.push('');
       L.push('Optimización de corte:');
       L.push('• Material: '+mat);L.push('• Tablero: '+BW+'x'+BH+' mm');L.push('• Respetar veta: '+(rotate?'No':'Sí'));L.push('• Piezas:');
-      pieces.forEach(function(p){L.push('   - '+p.qty+'x '+p.w+'x'+p.h+' mm ('+cantTxt(p)+')');});
+      pieces.forEach(function(p){var inf=cantTxt(p)+', canto '+(p.esp||'C');if(p.perf)inf+=', perforacion: '+p.perf;L.push('   - '+p.qty+'x '+p.w+'x'+p.h+' mm'+(p.det?' — '+p.det:'')+' ('+inf+')');});
       L.push('• Resultado (estimado): '+boards.length+' tablero(s), '+util+'% aprovechamiento, sobrante '+sobra.toFixed(2)+' m²');
       L.push('• Espesor: '+(esp||'(no indicado)')+' mm');
       L.push('• Cortes de tablero (est.): '+cortes);
