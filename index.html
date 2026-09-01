@@ -385,7 +385,7 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
       L.push('Cliente: '+nom);L.push('RNC/Cédula: '+rncc);L.push('Teléfono: '+tel);L.push('');
       L.push('Optimización de corte:');
       L.push('• Material: '+mat);L.push('• Tablero: '+BW+'x'+BH+' mm');L.push('• Respetar veta: '+(rotate?'No':'Sí'));L.push('• Piezas:');
-      pieces.forEach(function(p){var inf=cantTxt(p)+', canto '+(p.esp||'C');if(p.perf)inf+=', perforacion: '+p.perf;L.push('   - '+p.qty+'x '+p.w+'x'+p.h+' mm'+(p.det?' — '+p.det:'')+' ('+inf+')');});
+      pieces.forEach(function(p){var inf=cantTxt(p);if(p.cL||p.cA)inf+=', canto '+(p.esp||'B');if(p.perf)inf+=', perforacion: '+p.perf;L.push('   - '+p.qty+'x '+p.w+'x'+p.h+' mm'+(p.det?' — '+p.det:'')+' ('+inf+')');});
       L.push('• Resultado (estimado): '+boards.length+' tablero(s), '+util+'% aprovechamiento, sobrante '+sobra.toFixed(2)+' m²');
       L.push('• Espesor: '+(esp||'(no indicado)')+' mm');
       L.push('• Cortes de tablero (est.): '+cortes);
