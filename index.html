@@ -270,6 +270,57 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
     if(!inp||!dd||!dl)return;
     var MATS=[].slice.call(dl.querySelectorAll('option')).map(function(o){return o.value;});
     var hi=-1,cur=[];
+    /* ---- Catalogo vivo de ADM (productos activos con su codigo) ----------
+       La lista de <datalist> se queda como respaldo: si el webhook no
+       responde, el selector sigue funcionando como hasta ahora. */
+    var CAT_URL='https://n8n-xkkkgo88osskc8o0wskgwcog.72.61.70.23.sslip.io/webhook/catalogo-tableros';
+    var POR_DISENO={},selEsp=document.getElementById('esp'),ESP_FIJOS=selEsp?selEsp.innerHTML:null;
+    function espTxt(v){return (Math.round(v*100)/100)+'';}
+    function espFijos(){if(selEsp&&ESP_FIJOS!==null&&selEsp.innerHTML!==ESP_FIJOS)selEsp.innerHTML=ESP_FIJOS;}
+    function pintarEspesores(d){
+      var vs=(POR_DISENO[d]||[]).filter(function(v){return v.esp!==null&&v.esp!==undefined;});
+      if(!selEsp||!vs.length){espFijos();return;}
+      var previo=selEsp.value,veces={};
+      vs.forEach(function(v){veces[v.esp]=(veces[v.esp]||0)+1;});
+      var h='<option value="">Espesor...</option>';
+      vs.forEach(function(v){
+        /* dos tableros del mismo espesor solo se distinguen por la medida */
+        var et=espTxt(v.esp)+' mm'+((veces[v.esp]>1&&v.bw)?(' — '+v.bw+'×'+v.bh):'');
+        h+='<option value="'+espTxt(v.esp)+'" data-sku="'+v.codigo+'" data-bw="'+(v.bw||'')+'" data-bh="'+(v.bh||'')+'">'+et+'</option>';
+      });
+      selEsp.innerHTML=h;
+      if(vs.length===1)selEsp.selectedIndex=1;
+      else if(previo){for(var i=1;i<selEsp.options.length;i++){if(selEsp.options[i].value===previo){selEsp.selectedIndex=i;break;}}}
+      aplicarEspesor();
+    }
+    function aplicarEspesor(){
+      if(!selEsp)return;
+      var o=selEsp.options[selEsp.selectedIndex],sk=o?o.getAttribute('data-sku'):'';
+      if(!sk){inp.removeAttribute('data-sku');showSel();return;}
+      inp.setAttribute('data-sku',sk);
+      var bw=o.getAttribute('data-bw'),bh=o.getAttribute('data-bh'),
+          ebw=document.getElementById('bw'),ebh=document.getElementById('bh');
+      if(bw&&ebw)ebw.value=bw;
+      if(bh&&ebh)ebh.value=bh;
+      showSel();
+    }
+    function aplicarDiseno(v){
+      inp.removeAttribute('data-sku');
+      if(POR_DISENO[v])pintarEspesores(v);else espFijos();
+      showSel();
+    }
+    if(selEsp)selEsp.addEventListener('change',aplicarEspesor);
+    fetch(CAT_URL).then(function(r){return r.json();}).then(function(j){
+      if(!j||!j.ok||!j.productos||!j.productos.length)return;
+      var m={},orden=[];
+      j.productos.forEach(function(p){
+        if(!p.diseno||!p.codigo)return;
+        if(!m[p.diseno]){m[p.diseno]=[];orden.push(p.diseno);}
+        m[p.diseno].push(p);
+      });
+      POR_DISENO=m;MATS=orden;
+      if(dd.classList.contains('open'))render(inp.value);
+    }).catch(function(){});
     function esc(s){return s.replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];});}
     function render(q){
       q=(q||'').trim().toLowerCase();
@@ -280,10 +331,11 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
     }
     function open(){render(inp.value);dd.classList.add('open');}
     function close(){dd.classList.remove('open');}
-    function showSel(){var mel=document.getElementById('mat-sel');inp.title=inp.value||'';if(!mel)return;if(inp.value){mel.textContent='Tablero elegido: '+inp.value;mel.style.display='block';}else{mel.style.display='none';}}
-    function pick(o){inp.value=cur[+o.getAttribute('data-i')];close();showSel();}
+    function showSel(){var mel=document.getElementById('mat-sel');inp.title=inp.value||'';if(!mel)return;if(inp.value){var sk=inp.getAttribute('data-sku')||'';mel.textContent='Tablero elegido: '+inp.value+(sk?(' · cód. '+sk):'');mel.style.display='block';}else{mel.style.display='none';}}
+    function elegir(v){inp.value=v;close();aplicarDiseno(v);}
+    function pick(o){elegir(cur[+o.getAttribute('data-i')]);}
     inp.addEventListener('focus',open);
-    inp.addEventListener('input',function(){render(inp.value);dd.classList.add('open');showSel();});
+    inp.addEventListener('input',function(){render(inp.value);dd.classList.add('open');aplicarDiseno(inp.value);});
     var tY=0,tX=0,tMoved=false,lastT=0;
     dd.addEventListener('touchstart',function(e){var t=e.touches[0];tY=t.clientY;tX=t.clientX;tMoved=false;lastT=Date.now();},{passive:true});
     dd.addEventListener('touchmove',function(e){var t=e.touches[0];if(Math.abs(t.clientY-tY)>8||Math.abs(t.clientX-tX)>8)tMoved=true;},{passive:true});
@@ -295,7 +347,7 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
       var opts=dd.querySelectorAll('.opt');
       if(e.key==='ArrowDown')hi=Math.min(hi+1,opts.length-1);
       else if(e.key==='ArrowUp')hi=Math.max(hi-1,0);
-      else if(e.key==='Enter'){if(hi>=0&&cur[hi]){inp.value=cur[hi];close();showSel();e.preventDefault();}return;}
+      else if(e.key==='Enter'){if(hi>=0&&cur[hi]){elegir(cur[hi]);e.preventDefault();}return;}
       else if(e.key==='Escape'){close();return;}
       else return;
       opts.forEach(function(o,i){o.classList.toggle('hi',i===hi);});
@@ -381,10 +433,10 @@ th{font-weight:500;color:var(--muted);text-align:left;padding:4px}
     res.innerHTML=html;
     document.getElementById('back').onclick=function(){res.innerHTML='';document.getElementById('tool').scrollIntoView({behavior:'smooth'});};
     document.getElementById('quote').onclick=function(){
-      var esp=document.getElementById('esp').value,mat=((document.getElementById('mat').value||'').trim()+(esp?(' '+esp+' mm'):'')).trim()||'(sin especificar)',L=['*Solicitud de cotización — Maderas Ibéricas*',''];var refCorte='C'+Math.random().toString(36).slice(2,7).toUpperCase();
+      var esp=document.getElementById('esp').value,cod=(document.getElementById('mat').getAttribute('data-sku')||'').trim(),mat=((document.getElementById('mat').value||'').trim()+(esp?(' '+esp+' mm'):'')).trim()||'(sin especificar)',L=['*Solicitud de cotización — Maderas Ibéricas*',''];var refCorte='C'+Math.random().toString(36).slice(2,7).toUpperCase();
       L.push('Cliente: '+nom);L.push('RNC/Cédula: '+rncc);L.push('Teléfono: '+tel);L.push('');
       L.push('Optimización de corte:');
-      L.push('• Material: '+mat);L.push('• Tablero: '+BW+'x'+BH+' mm');L.push('• Respetar veta: '+(rotate?'No':'Sí'));L.push('• Piezas:');
+      L.push('• Material: '+mat+(cod?(' (cód. '+cod+')'):''));L.push('• Tablero: '+BW+'x'+BH+' mm');L.push('• Respetar veta: '+(rotate?'No':'Sí'));L.push('• Piezas:');
       pieces.forEach(function(p){var inf=cantTxt(p);if(p.cL||p.cA)inf+=', canto '+(p.esp||'B');if(p.perf)inf+=', perforacion: '+p.perf;L.push('   - '+p.qty+'x '+p.w+'x'+p.h+' mm'+(p.det?' — '+p.det:'')+' ('+inf+')');});
       L.push('• Resultado (estimado): '+boards.length+' tablero(s), '+util+'% aprovechamiento, sobrante '+sobra.toFixed(2)+' m²');
       L.push('• Espesor: '+(esp||'(no indicado)')+' mm');
