@@ -1,0 +1,19 @@
+# Este repositorio guarda todo el texto en LF.
+#
+# Aqui importa mas que en otros sitios: index.html son 773 KB en 430 lineas, y varias
+# de ellas pasan de 200 KB. Basta con que alguien lo abra en un editor de Windows para
+# que suba en CRLF y el diff deje de ser legible: 430 lineas cambiadas para tocar una.
+# Es lo que le paso a server.js en el repo del cotizador (+644 -644 por una palabra).
+#
+# text=auto deja que git decida que es texto; eol=lf fija LF tanto en el repositorio
+# como al sacar los ficheros, en cualquier sistema operativo. Los binarios se marcan
+# aparte para que git no los toque nunca.
+
+* text=auto eol=lf
+
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.pdf  binary
+*.ico  binary
+*.mp4  binary
