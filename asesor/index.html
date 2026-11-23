@@ -22,13 +22,21 @@
 <script>
   // Lleva al WhatsApp del asesor. Solo acepta un número (dígitos), así que no puede
   // redirigir a ningún otro sitio. Acepta ?n=18295591192 o ?n=18295591192?text=...
+  // ?c=18095551234 = el asesor le escribe al CLIENTE (plantilla aviso_llamada_asesor):
+  // abre ese chat sin texto. Va en un solo parámetro porque Meta daña los enlaces
+  // de botón con dos parámetros (?text=&n=).
   (function () {
     var q = location.search.slice(1), n = '', t = 'Hola, vengo de una llamada con Lucy';
     var mN = q.match(/(?:^|&)n=(\d{8,15})/);
     if (mN) n = mN[1];
     var mT = q.match(/text=([^&]*)/);
     if (mT) { try { t = decodeURIComponent(mT[1].replace(/\+/g, ' ')); } catch (e) {} }
-    var url = 'https://wa.me/' + (n || '18099576500') + '?text=' + encodeURIComponent(t);
+    var mC = q.match(/(?:^|&)c=(\d{8,15})/);
+    if (mC) {
+      n = mC[1]; t = '';
+      document.getElementById('m').textContent = 'Abriendo el chat del cliente…';
+    }
+    var url = 'https://wa.me/' + (n || '18099576500') + (t ? '?text=' + encodeURIComponent(t) : '');
     document.getElementById('b').href = url;
     location.replace(url);
   })();
